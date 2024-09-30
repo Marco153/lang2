@@ -424,7 +424,7 @@ namespace own_std
 		{
 			int l = strlen(chars);
 
-			for(int i = len; i >= 0 ; i--)
+			for(int i = l; i >= 0 ; i--)
 			{
 				int idx = 0;
 				if(contains_char_rev(chars[i], &idx))
@@ -454,7 +454,7 @@ namespace own_std
 				new_c_str_vec(c_str_vec_len * 2);
 			
 			c_str_vec[c_str_vec_count] = buffer;
-
+			c_str_vec_count++;
 			
 			return buffer;
 		}
@@ -529,7 +529,7 @@ namespace own_std
 			char* buffer = (char *)__lang_globals.alloc(__lang_globals.data, new_l);
 			string new_one;
 			memcpy(buffer, data_ + idx, new_l);
-			new_one.data_;
+			new_one.data_ = buffer;
 			new_one.len = new_l;
 
 			return new_one;
@@ -539,7 +539,7 @@ namespace own_std
 			char* buffer = (char *)__lang_globals.alloc(__lang_globals.data, size);
 			string new_one;
 			memcpy(buffer, data_ + idx, size);
-			new_one.data_;
+			new_one.data_ = buffer;
 			new_one.len = size;
 
 			return new_one;
