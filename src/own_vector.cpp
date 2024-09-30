@@ -178,7 +178,7 @@ namespace own_std
 			char* buffer = (char *)__lang_globals.alloc(__lang_globals.data, new_l);
 			string new_one;
 			memcpy(buffer, data_ + idx, new_l);
-			new_one.data_;
+			new_one.data_ = buffer;
 			new_one.len = new_l;
 
 			return new_one;
@@ -188,7 +188,7 @@ namespace own_std
 			char* buffer = (char *)__lang_globals.alloc(__lang_globals.data, size);
 			string new_one;
 			memcpy(buffer, data_ + idx, size);
-			new_one.data_;
+			new_one.data_ = buffer;
 			new_one.len = size;
 
 			return new_one;
@@ -197,7 +197,6 @@ namespace own_std
 		{
 			int total = other.len + len;
 			char* buffer = (char *)__lang_globals.alloc(__lang_globals.data, total);
-			string new_one;
 			memcpy(buffer, data_, len);
 			memcpy(buffer + len, other.data_, other.len);
 			__lang_globals.free(__lang_globals.data, data_);
@@ -342,7 +341,7 @@ namespace own_std
 		string operator +(string other)
 		{
 			// use concat_in_place instead
-			ASSERT(0);
+			//ASSERT(0);
 			return concat(other);
 		}
 		char& operator [](int idx)

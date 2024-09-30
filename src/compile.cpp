@@ -521,7 +521,9 @@ char* std_str_to_heap(lang_state*, own_std::string* str);
 
 void NewTypeToSection(lang_state* lang_stat, char* type_name, enum_type2 idx)
 {
-	own_std::string final_name = own_std::string("$$") + type_name;
+	char char_buffer[512];
+	snprintf(char_buffer, 512, "$$%s", type_name);
+	own_std::string final_name = char_buffer;
 	lang_stat->type_sect_syms.push_back(
 		machine_sym(lang_stat, SYM_TYPE_DATA, (unsigned int)lang_stat->type_sect.size() + sizeof(type_data), std_str_to_heap(lang_stat, &final_name))
 	);
