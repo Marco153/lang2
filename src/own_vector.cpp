@@ -1,3 +1,4 @@
+
 namespace own_std
 {
 
@@ -594,3 +595,5 @@ namespace own_std
 		}
 	};
 }
+
+
