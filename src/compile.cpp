@@ -8256,8 +8256,8 @@ int Compile(lang_state* lang_stat, compile_options *opts)
 		lang_stat->cur_file = f;
 		lang_stat->lhs_saved = 0;
 		lang_stat->call_regs_used = 0;
-		//own_std::string scp_str = lang_stat->root->Print(0);
-		//printf("file: %s, scp: \n %s", f->name.c_str(), scp_str.c_str());
+		own_std::string scp_str = lang_stat->root->Print(0);
+		printf("file: %s, scp: \n %s", f->name.c_str(), scp_str.c_str());
 		DescendNode(lang_stat, f->s, f->global);
 
 		/*

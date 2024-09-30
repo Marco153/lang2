@@ -339,10 +339,38 @@ namespace own_std
 		{
 			concat_in_place(other);
 		}
+		void operator =(const string &&other)
+		{
+			char* buffer = (char *)__lang_globals.alloc(__lang_globals.data, other.len);
+			memcpy(buffer, other.data_, other.len);
+			data_ = buffer;
+			len = other.len;
+		}
+		void operator =(const string &other)
+		{
+			char* buffer = (char *)__lang_globals.alloc(__lang_globals.data, other.len);
+			memcpy(buffer, other.data_, other.len);
+			data_ = buffer;
+			len = other.len;
+		}
+		void operator =(string &&other)
+		{
+			char* buffer = (char *)__lang_globals.alloc(__lang_globals.data, other.len);
+			memcpy(buffer, other.data_, other.len);
+			data_ = buffer;
+			len = other.len;
+		}
+		void operator =(string &other)
+		{
+			char* buffer = (char *)__lang_globals.alloc(__lang_globals.data, other.len);
+			memcpy(buffer, other.data_, other.len);
+			data_ = buffer;
+			len = other.len;
+		}
 		string operator +(string other)
 		{
 			// use concat_in_place instead
-			ASSERT(0);
+			//ASSERT(0);
 			return concat(other);
 		}
 		char& operator [](int idx)
