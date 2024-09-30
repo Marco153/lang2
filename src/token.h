@@ -24,16 +24,16 @@ struct unit_file;
 void NewFuncToCompile(func_decl * fedcl);
 void NewDeclToCurFilseGlobalsScope(lang_state *, decl2 * decl);
 func_decl* IsThereAFunction(lang_state *, char* name);
-type_struct2 *SearchSerializedStruct(std::string name);
+type_struct2 *SearchSerializedStruct(own_std::string name);
 void AddNewDeclToFileGlobalScope(lang_state *, decl2 * d);
 bool GetTypeFromTkns(token2 *tkns, type2 &tp);
 bool GetDeclFromTkns(own_std::vector<token2> *tkns, int *i, decl2 *);
 bool GetDeclFromTkns(own_std::vector<token2> *tkns, int *i, decl2 *);
 type2 DescendNode(lang_state *, node *n, scope *scp);
 void InsertIntoCharVector(own_std::vector<char> *vec, void *src, int size);
-std::string FuncNameWithTempls(lang_state *,  std::string fname, own_std::vector<type2> *types);
-std::string MangleFuncNameWithArgs(lang_state *, func_decl *fdecl, std::string original_name, int start_arg);
-decl2 *NewDecl(lang_state *, std::string name, type2 tp);
+own_std::string FuncNameWithTempls(lang_state *,  own_std::string fname, own_std::vector<type2> *types);
+own_std::string MangleFuncNameWithArgs(lang_state *, func_decl *fdecl, own_std::string original_name, int start_arg);
+decl2 *NewDecl(lang_state *, own_std::string name, type2 tp);
 decl2 *GetDeclFromStruct(type_struct2*);
 void TransformSingleFuncToOvrlStrct(lang_state *, decl2 *decl_exist);
 
@@ -204,7 +204,7 @@ struct type_data
 };
 struct template_expr
 {
-	std::string name;
+	own_std::string name;
 	int type;
 	type2 *final_type;
 	node *expr;
@@ -213,7 +213,7 @@ struct template_expr
 };
 struct func_overload_strct
 {
-	std::string name;
+	own_std::string name;
 
 	overload_op ovrld_op;
 	own_std::vector<func_decl *> fdecls;
@@ -252,7 +252,7 @@ struct type2
 		int s32;
 		long long s64;
 		type_struct2 *strct;
-		std::string template_name;
+		own_std::string template_name;
 		void (*macro_builtin)(node *, node *, node *, void *);
         decl2 *type_def_decl;
 
@@ -279,7 +279,7 @@ struct type2
 		{
 			union
 			{
-				std::string templ_name;
+				own_std::string templ_name;
 				int ar_size;
 			};
 			int *decl_offset;
@@ -297,7 +297,7 @@ struct type2
 	// ***
 
 #endif
-	decl2 *GetEnumDecl(std::string name);
+	decl2 *GetEnumDecl(own_std::string name);
 	func_decl *ChooseFuncOverload(lang_state *, own_std::vector<type2> *tps);
 	bool IsStrct(decl2 **decl)
 	{
@@ -330,7 +330,7 @@ struct type2
 };
 struct template_to_be_assigned
 {
-	std::string name;
+	own_std::string name;
 	type2 **ptr;
 };
 #define FUNC_DECL_IS_LAMBDA   0x1
@@ -362,8 +362,8 @@ struct stmnt_dbg
 };
 struct func_decl
 {
-	std::string name;
-	std::string link_name;
+	own_std::string name;
+	own_std::string link_name;
 
 	own_std::vector<decl2 *> args;
 	own_std::vector<decl2 *> vars;
@@ -481,7 +481,7 @@ struct decl2
 #ifndef COMPILER
 	rel_ptr<char> name;
 #else
-	std::string name;
+	own_std::string name;
 #endif
 	type2 type;
     union
@@ -501,7 +501,7 @@ struct decl2
 
 	unit_file *from_file;
 
-	bool AssignTemplate(lang_state *, std::string tname, type2 *tp, comma_ret *);
+	bool AssignTemplate(lang_state *, own_std::string tname, type2 *tp, comma_ret *);
 	decl2()
 	{
 		memset(this, 0, sizeof(*this));
@@ -520,7 +520,7 @@ decl2 *FindDeclFunc(own_std::vector<decl2> *vec, bool(*func)(decl2 *))
 	return nullptr;
 }
 
-std::string OvrldOpToStr(overload_op op);
+own_std::string OvrldOpToStr(overload_op op);
 
 #define TP_STRCT_TEMPLATED 1
 #define TP_STRCT_STRUCT_NOT_NODE 2
@@ -533,7 +533,7 @@ struct type_struct2
 	rel_ptr<char> name;
 	rel_array<decl2> vars;
 #else
-	std::string name;
+	own_std::string name;
 	own_std::vector<decl2 *> vars;
 
 	decl2 *this_decl;
@@ -561,7 +561,7 @@ struct type_struct2
 	{
 		memset(this, 0, sizeof(type_struct2));
 	}
-	//own_std::vector<std::string> templates;
+	//own_std::vector<own_std::string> templates;
 	//own_std::vector<type2> templates_insantiated;
 	func_decl *CreateNewOpOverload(lang_state *lang_stat, func_decl *original, overload_op tp);
 	void AddNewConstrctor(func_decl *fdecl)
@@ -603,7 +603,7 @@ struct type_struct2
 			f_tp.type  = TYPE_FUNC;
 			f_tp.fdecl = fdecl;
 
-			std::string fname = this->name + OvrldOpToStr(fdecl->op_overload);
+			own_std::string fname = this->name + OvrldOpToStr(fdecl->op_overload);
 
 			//if (fdecl->op_overload == COND_EQ_OP)
 			if (IS_FLAG_OFF(fdecl->flags, FUNC_DECL_NAME_INSERTED))
@@ -623,7 +623,7 @@ struct type_struct2
 #endif
 	func_decl *FindOpOverload(lang_state *, overload_op tp, own_std::vector<type2> * = nullptr);
 	func_decl *FindExistingOverload(lang_state*, own_std::vector<func_overload_strct> *funcs, void * op, own_std::vector<type2> *tps, bool search_operator_ovrld);
-	decl2 *FindDecl(std::string name)
+	decl2 *FindDecl(own_std::string name)
 	{
 #ifdef COMPILER
 		for(int i = 0; i < this->vars.size(); i++)
@@ -712,7 +712,8 @@ struct token2
 	char *line_str;
 	union
 	{
-		std::string str;
+		char buffer[24];
+		own_std::string str;
 		union
 		{
 			int i;
@@ -737,7 +738,7 @@ struct token2
 	}
 	~token2(){}
 
-	std::string ToString();
+	own_std::string ToString();
 	
 	token2 *NewTkn(lang_state *lang_stat)
 	{
@@ -759,7 +760,7 @@ struct token2
 		return ret;
 	}
 };
-int IsTknWordStr(token2 *tkn, std::string str)
+int IsTknWordStr(token2 *tkn, own_std::string str)
 {
 	return tkn->type == tkn_type2::T_WORD && tkn->str == str;
 }
@@ -777,7 +778,7 @@ int FindToken(own_std::vector<token2> *to_search, int start, bool(*func)(tkn_typ
 	}
 	return start + i;
 }
-int FindWordAtSameScope(own_std::vector<token2> *to_search, int start, int end, std::string target)
+int FindWordAtSameScope(own_std::vector<token2> *to_search, int start, int end, own_std::string target)
 {
 	int level = 0;
 	tkn_type2 ch = (tkn_type2)0;
@@ -841,162 +842,162 @@ int FindTokenClose(own_std::vector<token2> *to_search, int start, tkn_type2 targ
 	i--;
 	return start + i;
 }
-std::string OperatorToString(tkn_type2 type)
+own_std::string OperatorToString(tkn_type2 type)
 {
 	switch(type)
 	{
 		case tkn_type2::T_PIPE:
 		{
-			return std::string("|");
+			return own_std::string("|");
 		}break;
 		case tkn_type2::T_EXCLAMATION:
 		{
-			return std::string("!");
+			return own_std::string("!");
 		}break;
 		case tkn_type2::T_PERCENT:
 		{
-			return std::string("%");
+			return own_std::string("%");
 		}break;
 		case tkn_type2::T_COLON:
 		{
-			return std::string(":");
+			return own_std::string(":");
 		}break;
 		case tkn_type2::T_PLUS:
 		{
-			return std::string("+");
+			return own_std::string("+");
 		}break;
 		case tkn_type2::T_COND_OR:
 		{
-			return std::string("|");
+			return own_std::string("|");
 		}break;
 		case tkn_type2::T_NEW_LINE:
 		{
-			return std::string("\n");
+			return own_std::string("\n");
 		}break;
 		case tkn_type2::T_AT:
 		{
-			return std::string("@");
+			return own_std::string("@");
 		}break;
 		case tkn_type2::T_POINT:
 		{
-			return std::string(".");
+			return own_std::string(".");
 		}break;
 		case tkn_type2::T_COMMA:
 		{
-			return std::string(",");
+			return own_std::string(",");
 		}break;
 		case tkn_type2::T_CLOSE_CURLY:
 		{
-			return std::string("\n}\n");
+			return own_std::string("\n}\n");
 		}break;
 		case tkn_type2::T_OPEN_CURLY:
 		{
-			return std::string("\n{\n");
+			return own_std::string("\n{\n");
 		}break;
 		case tkn_type2::T_LESSER_THAN:
 		{
-			return std::string("<");
+			return own_std::string("<");
 		}break;
 		case tkn_type2::T_LESSER_EQ:
 		{
-			return std::string("<=");
+			return own_std::string("<=");
 		}break;
 		case tkn_type2::T_GREATER_THAN:
 		{
-			return std::string(">");
+			return own_std::string(">");
 		}break;
 		case tkn_type2::T_OPEN_BRACKETS:
 		{
-			return std::string("[");
+			return own_std::string("[");
 		}break;
 		case tkn_type2::T_CLOSE_BRACKETS:
 		{
-			return std::string("]");
+			return own_std::string("]");
 		}break;
 		case tkn_type2::T_OPEN_PARENTHESES:
 		{
-			return std::string("(");
+			return own_std::string("(");
 		}break;
 		case tkn_type2::T_CLOSE_PARENTHESES:
 		{
-			return std::string(")");
+			return own_std::string(")");
 		}break;
 		case tkn_type2::T_MINUS:
 		{
-			return std::string("-");
+			return own_std::string("-");
 		}break;
 		case tkn_type2::T_EQUAL:
 		{
-			return std::string("=");
+			return own_std::string("=");
 		}break;
 		case tkn_type2::T_AMPERSAND:
 		{
-			return std::string("&");
+			return own_std::string("&");
 		}break;
 		case tkn_type2::T_SEMI_COLON:
 		{
-			return std::string(";\n");
+			return own_std::string(";\n");
 		}break;
 		case tkn_type2::T_COND_NE:
 		{
-			return std::string("!=");
+			return own_std::string("!=");
 		}break;
 		case tkn_type2::T_COND_EQ:
 		{
-			return std::string("==");
+			return own_std::string("==");
 		}break;
 		case tkn_type2::T_GREATER_EQ:
 		{
-			return std::string(">=");
+			return own_std::string(">=");
 		}break;
 		case tkn_type2::T_DIV:
 		{
-			return std::string("/");
+			return own_std::string("/");
 		}break;
 		case tkn_type2::T_MUL:
 		{
-			return std::string("*");
+			return own_std::string("*");
 		}break;
 		default:
 			ASSERT(0);
 	}
-	return std::string("");
+	return own_std::string("");
 }
-std::string token2::ToString()
+own_std::string token2::ToString()
 {
 	switch(type)
 	{
 		case tkn_type2::T_PIPE:
 		{
-			return std::string("|");
+			return own_std::string("|");
 		}break;
 		case tkn_type2::T_EXCLAMATION:
 		{
-			return std::string("!");
+			return own_std::string("!");
 		}break;
 		case tkn_type2::T_COLON:
 		{
-			return std::string(":");
+			return own_std::string(":");
 		}break;
 		case tkn_type2::T_PLUS:
 		{
-			return std::string("+");
+			return own_std::string("+");
 		}break;
 		case tkn_type2::T_NEW_LINE:
 		{
-			return std::string("\n");
+			return own_std::string("\n");
 		}break;
 		case tkn_type2::T_AT:
 		{
-			return std::string("@");
+			return own_std::string("@");
 		}break;
 		case tkn_type2::T_FLOAT:
 		{
-			return std::to_string(this->f);
+			return std::to_string(this->f).c_str();
 		}break;
 		case tkn_type2::T_INT:
 		{
-			return std::to_string(this->i);
+			return std::to_string(this->i).c_str();
 		}break;
 		case tkn_type2::T_WORD:
 		{
@@ -1004,70 +1005,70 @@ std::string token2::ToString()
 		}break;
 		case tkn_type2::T_POINT:
 		{
-			return std::string(".");
+			return own_std::string(".");
 		}break;
 		case tkn_type2::T_COMMA:
 		{
-			return std::string(",");
+			return own_std::string(",");
 		}break;
 		case tkn_type2::T_CLOSE_CURLY:
 		{
-			return std::string("\n}\n");
+			return own_std::string("\n}\n");
 		}break;
 		case tkn_type2::T_OPEN_CURLY:
 		{
-			return std::string("\n{\n");
+			return own_std::string("\n{\n");
 		}break;
 		case tkn_type2::T_LESSER_THAN:
 		{
-			return std::string("<");
+			return own_std::string("<");
 		}break;
 		case tkn_type2::T_GREATER_THAN:
 		{
-			return std::string(">");
+			return own_std::string(">");
 		}break;
 		case tkn_type2::T_OPEN_BRACKETS:
 		{
-			return std::string("[");
+			return own_std::string("[");
 		}break;
 		case tkn_type2::T_CLOSE_BRACKETS:
 		{
-			return std::string("]");
+			return own_std::string("]");
 		}break;
 		case tkn_type2::T_OPEN_PARENTHESES:
 		{
-			return std::string("(");
+			return own_std::string("(");
 		}break;
 		case tkn_type2::T_CLOSE_PARENTHESES:
 		{
-			return std::string(")");
+			return own_std::string(")");
 		}break;
 		case tkn_type2::T_MINUS:
 		{
-			return std::string("-");
+			return own_std::string("-");
 		}break;
 		case tkn_type2::T_EQUAL:
 		{
-			return std::string("=");
+			return own_std::string("=");
 		}break;
 		case tkn_type2::T_AMPERSAND:
 		{
-			return std::string("&");
+			return own_std::string("&");
 		}break;
 		case tkn_type2::T_SEMI_COLON:
 		{
-			return std::string(";\n");
+			return own_std::string(";\n");
 		}break;
 		case tkn_type2::T_MUL:
 		{
-			return std::string("*");
+			return own_std::string("*");
 		}break;
 	}
-	return std::string("");
+	return own_std::string("");
 }
-std::string StringifyTkns(own_std::vector<token2> *tkns, int start, int amount)
+own_std::string StringifyTkns(own_std::vector<token2> *tkns, int start, int amount)
 {
-	std::string final_ret;
+	own_std::string final_ret;
 	final_ret.reserve(64);
 	for(int i = 0; i < amount; i++)
 	{
@@ -1124,7 +1125,7 @@ struct comma_ret
 };
 func_decl *type2::ChooseFuncOverload(lang_state *lang_stat, own_std::vector<type2> *tps)
 {
-	std::string name = FuncNameWithTempls(lang_stat, overload_funcs->name, tps);;
+	own_std::string name = FuncNameWithTempls(lang_stat, overload_funcs->name, tps);;
 
 	FOR_VEC(f, overload_funcs->fdecls)
 	{

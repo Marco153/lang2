@@ -5,7 +5,7 @@ struct rel_ptr
 {
 	T offset;
 	
-	void operator=(std::string &ptr)
+	void operator=(own_std::string &ptr)
 	{
 	}
 	void operator=(char *ptr)
@@ -28,20 +28,3 @@ struct rel_str
 	int len;
 };
 
-template <typename T>
-struct rel_array
-{
-	rel_ptr<int, char> data;
-	int len;
-	
-	T *operator[](int idx)
-	{
-		ASSERT(idx < len)
-		return (T *)((char *)(this + 1) + idx * sizeof (T));
-	}
-};
-
-void rel_ptr<char, char *>::operator=(std::string &s)
-{
-	*this = (char *)s.data();
-}

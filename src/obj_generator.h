@@ -1,4 +1,5 @@
 #pragma once
+/*
 #include "bytecode.h"
 //#include "FileIO.cpp"
 // Section contains executable code
@@ -369,3 +370,4 @@ void GenerateObj(lang_state *lang_stat, char* name, machine_code *machine)
 	WriteFileLang(name, buffer, size);
 	CallLinker(lang_stat, "entry", name);
 }
+*/

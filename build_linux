@@ -1,0 +1,1 @@
+clang++ -Isrc/include -o build/a.out -g -L/src/lib -std=c++11 src/main.cpp -fpermissive -Waddress-of-temporary -Wno-everything 

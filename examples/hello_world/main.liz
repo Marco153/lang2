@@ -1,20 +1,2 @@
 PrintStr::fn outsider(str_lit);
-st : struct
-{
-	b : bool,
-}
-_own_memset::fn(src : *void, a:u32, b:u32)
-{
-}
-main :: fn()
-{
-	val :st;
-	ptr := &val;
-	ptr.b = true;
 
-	__dbg_break;
-	if !ptr.b
-		__dbg_break;
-
-	PrintStr("Hello world");
-}

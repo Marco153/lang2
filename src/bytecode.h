@@ -481,7 +481,7 @@ enum fret_type
 };
 struct bc_reloc
 {
-	std::string name;
+	own_std::string name;
 	int inst_idx;
 	~bc_reloc()
 	{
@@ -497,7 +497,7 @@ struct bc_reloc
 		memcpy(this, &other, sizeof(*this));
 	}
 	bc_reloc(){}
-	bc_reloc(std::string name, int idx){this->name = name; this->inst_idx = idx;}
+	bc_reloc(own_std::string name, int idx){this->name = name; this->inst_idx = idx;}
 };
 #define DFR_CALL_STRCT_RET_VAL 1
 #define DFR_MEM_ALREADY_PULLED 2
@@ -518,7 +518,7 @@ struct descend_func_ret
 			int sib;
 			char ptr;
 		};
-		std::string str;
+		own_std::string str;
 		//decl2 *var;
 		union
 		{
@@ -621,22 +621,22 @@ struct interpreter
 	int GetCurStackSize();
 	void CmpSetFlags(long long lhs, long long rhs, char size, bool is_unsigned);
 	
-	func_byte_code *SearchFinalFunc(std::string name);
-	void *GetOutsiderFunc(std::string);
+	func_byte_code *SearchFinalFunc(own_std::string name);
+	void *GetOutsiderFunc(own_std::string);
 
 	void SetBCode(own_std::vector<func_byte_code *> *ar);
 	long long GetRegVal(char idx);
 	long long *GetRegValPtr(char idx);
 	void PushVal(long long  val);
 
-	long long *interpreter::GetMem(int offset, char reg_idx);
-	void interpreter::SetRegFromMem(int offset, char out_reg_idx, char mem_size, char base_reg = 5);
+	long long *GetMem(int offset, char reg_idx);
+	void SetRegFromMem(int offset, char out_reg_idx, char mem_size, char base_reg = 5);
 	void SetMemFromReg(char reg_idx, int offset);
 };
 
 struct func_byte_code
 {
-	std::string name;
+	own_std::string name;
 	int start_idx;
 	struct
 	{

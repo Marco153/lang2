@@ -83,7 +83,7 @@ T *LangArray<T>::Peek()
 template <class T>
 T *LangArray<T>::Pop()
 {
-	ASSERT(this-count > 0)
+	ASSERT(this->count > 0)
 	if(count == 0)
 	{
 		return nullptr;

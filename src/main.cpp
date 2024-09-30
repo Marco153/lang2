@@ -1,3 +1,63 @@
+#define LINUX
+#ifdef LINUX
+#include <sys/mman.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+int min(int a, int b)
+{
+	return a < b ?a : b;
+}
+int max(int a, int b)
+{
+	return a >b ?a : b;
+}
+void ExitProcess(int val)
+{
+	_exit(val);
+	
+}
+#endif
+void PlatformGetFileFullPath(const char *file_name, char *buffer, int buffer_sz)
+{
+#ifdef LINUX
+	realpath(file_name, buffer);
+#else
+	// implement win version
+	ASSERT(0)
+#endif
+}
+void PlatformSetCurretDir(char *buffer)
+{
+#ifdef LINUX
+	if (chdir(buffer) != 0) {
+		perror("chdir failed");
+	}
+#else
+	SetCurrentDirectory(buffer);
+#endif
+}
+void PlatformExeFullparh(char *buffer, int buffer_len)
+{
+#ifdef LINUX
+	int len = readlink("/proc/self/exe", buffer, buffer_len);
+
+	if (len == -1) {
+		perror("Error getting executable path");
+	}
+
+	// Null-terminate the string
+	buffer[len] = '\0';
+#else
+	GetModuleFileName(NULL, buffer, buffer_len);
+#endif
+}
+
+
+#include <cstring>
 #include "compile.cpp"
 #include "memory.cpp"
 #include <glad/glad.h> 
@@ -43,7 +103,7 @@ struct open_gl_state
 	own_std::vector<texture_raw> textures_raw;
 	double last_time;
 
-	std::string texture_folder;
+	own_std::string texture_folder;
 
 	int width;
 	int height;
@@ -105,6 +165,7 @@ struct draw_info
 	int flags;
 };
 
+/*
 int GetTextureSlotId(open_gl_state* gl_state)
 {
 	for (int i = 0; i < TOTAL_TEXTURES; i++)
@@ -361,11 +422,11 @@ struct load_clip_args
 	float len;
 	clip* cinfo;
 };
-texture_raw* HasRawTexture(open_gl_state* gl_state, std::string name)
+texture_raw* HasRawTexture(open_gl_state* gl_state, own_std::string name)
 {
 	FOR_VEC(tex, gl_state->textures_raw)
 	{
-		if (std::string(tex->name) == name)
+		if (own_std::string(tex->name) == name)
 		{
 			return tex;
 		}
@@ -444,7 +505,7 @@ void LoadTex(dbg_state* dbg)
 
 	auto gl_state = (open_gl_state*)dbg->data;
 
-	texture_raw* tex_raw = HasRawTexture(gl_state, std::string((char*)info->file_name));
+	texture_raw* tex_raw = HasRawTexture(gl_state, own_std::string((char*)info->file_name));
 	int width, height, nrChannels;
 	unsigned char* src = nullptr;
 	src = tex_raw->data;
@@ -462,96 +523,6 @@ void LoadTex(dbg_state* dbg)
 	auto ret = (int*)&dbg->mem_buffer[RET_1_REG * 8];
 	*ret = idx;
 }
-void MaybeAddBarToEndOfStr(std::string* str)
-{
-	if (str->size() != 0 && (*str)[str->size() - 1] != '/' && (*str)[str->size() - 1] != '\\')
-		(*str) += '/';
-
-}
-void ImageFolderToFile(std::string folder)
-{
-	struct file_header
-	{
-		unsigned int total_imgs;
-		unsigned int data_sect_offset;
-		unsigned int str_tbl_offset;
-	};
-	struct file_png
-	{
-		unsigned int name;
-		unsigned int width;
-		unsigned int height;
-		unsigned char channels;
-		unsigned int data;
-	};
-	own_std::vector<char*> file_names;
-	own_std::vector<unsigned char> file_data;
-	own_std::vector<unsigned char> data_sect;
-	own_std::vector<unsigned char> str_table;
-	GetFilesInDirectory((char *)folder.c_str(), nullptr, &file_names);
-
-
-	int total_imgs = 0;
-	FOR_VEC(ptr, file_names)
-	{
-		std::string str = *ptr;
-		int p_idx = str.find_last_of('.');
-		std::string ext = str.substr(p_idx + 1);
-		if (ext == "png")
-		{
-			int cur_str_table_offset = str_table.size();
-			auto c_str = (unsigned char*)str.c_str();
-			str_table.insert(str_table.end(), c_str, c_str + str.size() + 1);
-
-			int cur_offset = file_data.size();
-			file_data.make_count(file_data.size() + sizeof(file_png));
-			auto cur_file = (file_png*)(file_data.begin() + cur_offset);
-
-			int width, height, nrChannels;
-			unsigned char* src = nullptr;
-			stbi_set_flip_vertically_on_load(true);
-
-			src = stbi_load((char*)(folder + str).c_str(), &width, &height, &nrChannels, 0);
-			ASSERT(src);
-
-
-			cur_file->name = cur_str_table_offset;
-			cur_file->width = width;
-			cur_file->height = height;
-			cur_file->channels = nrChannels;
-			cur_file->data = data_sect.size();
-
-			data_sect.insert(data_sect.end(), src, src + (width * height * nrChannels));
-			stbi_image_free(src);
-			total_imgs++;
-
-		}
-	}
-	own_std::vector<unsigned char> final_buffer;
-
-	INSERT_VEC(final_buffer, file_data);
-	int data_sect_offset = final_buffer.size();
-	INSERT_VEC(final_buffer, data_sect);
-	int str_tbl_offset = final_buffer.size();
-	INSERT_VEC(final_buffer, str_table);
-
-	file_header hdr;
-	hdr.total_imgs = total_imgs;
-	hdr.str_tbl_offset = str_tbl_offset;
-	hdr.data_sect_offset = data_sect_offset;
-
-	final_buffer.insert(final_buffer.begin(), (unsigned char*)&hdr, (unsigned char*)(&hdr + 1));
-
-	int size = final_buffer.size();
-	if ((size % 4) != 0)
-		size += 4 - (size % 4);
-	final_buffer.make_count(size);
-
-	std::string imgs_str((char*)final_buffer.data(), final_buffer.size());
-	std::string images_encoded_str = base64_encode(imgs_str);
-
-	WriteFileLang("../web/images.data", (void *)images_encoded_str.data(), images_encoded_str.size());
-}
 void AssignTexFolder(dbg_state* dbg)
 {
 	int base_ptr = *(int*)&dbg->mem_buffer[STACK_PTR_REG * 8];
@@ -561,7 +532,7 @@ void AssignTexFolder(dbg_state* dbg)
 	auto gl_state = (open_gl_state*)dbg->data;
 	
 	gl_state->texture_folder = name_str;
-	std::string work_dir = dbg->cur_func->from_file->name;
+	own_std::string work_dir = dbg->cur_func->from_file->name;
 	int last_bar = work_dir.find_last_of('/');
 	work_dir = work_dir.substr(0, last_bar + 1);
 	//MaybeAddBarToEndOfStr(&work_dir);
@@ -598,7 +569,7 @@ void LoadClip(dbg_state* dbg)
 
 	// load and generate the texture
 	int width, height, nrChannels;
-	texture_raw* tex_raw = HasRawTexture(gl_state, std::string((char*)info->file_name));
+	texture_raw* tex_raw = HasRawTexture(gl_state, own_std::string((char*)info->file_name));
 	ASSERT(tex_raw);
 	unsigned char* src = nullptr;
 	src = tex_raw->data;
@@ -613,16 +584,6 @@ void LoadClip(dbg_state* dbg)
 
 		texs_id[cur_sp] = GenTexture(dbg->lang_stat, gl_state, src, info->sp_width, info->sp_height, info->x_offset, info->y_offset, width, height, cur_sp);
 	}
-	/*
-	func_decl* call_f = FuncAddedWasmInterp(dbg->wasm_state, "heap_alloc");
-
-	block_linked* cur = NewBlock(nullptr);
-	WasmDoCallInstruction(dbg, dbg->cur_bc, &cur, call_f);
-	FreeBlock(cur);
-	int addr = *(int*)&dbg->mem_buffer[RET_1_REG * 8];
-	//dbg->wasm_state->funcs
-	int a = 0;
-	*/
 }
 
 int CompileShader(char* source, int type)
@@ -661,13 +622,11 @@ void OpenWindow(dbg_state* dbg)
 	GLFWwindow* window;
 
 
-	/* Initialize the library */
 	if (!glfwInit())
 		return;
 
 	gl_state->width = 1200;
 	gl_state->height = 1000;
-	/* Create a windowed mode window and its OpenGL context */
 	window = glfwCreateWindow(gl_state->width, gl_state->height, "Hello World", NULL, NULL);
 	if (!window)
 	{
@@ -676,7 +635,6 @@ void OpenWindow(dbg_state* dbg)
 	}
 	gl_state->glfw_window = window;
 
-	/* Make the window's context current */
 	glfwMakeContextCurrent(window);
 
 	glfwSetWindowUserPointer(window, (void*)gl_state);
@@ -817,26 +775,7 @@ void OpenWindow(dbg_state* dbg)
 
 
 }
-/*
-void DebuggerCommand(dbg_state* dbg)
-{
-	int base_ptr = *(int*)&dbg->mem_buffer[STACK_PTR_REG * 8];
-	int str_offset = *(int*)&dbg->mem_buffer[base_ptr + 8];
-	//ASSERT(sz > 0)
-
-	char* str = (char*)&dbg->mem_buffer[str_offset];
-
-
-	int addr = *(int*)&dbg->mem_buffer[MEM_PTR_CUR_ADDR];
-	//int *max = (int*)&dbg->mem_buffer[MEM_PTR_MAX_ADDR];
-	*(int*)&dbg->mem_buffer[MEM_PTR_CUR_ADDR] += sz;
-	ASSERT((addr + sz) < 64000);
-	//*max += sz;
-
-	*(int*)&dbg->mem_buffer[RET_1_REG * 8] = addr;
-
-}
-*/
+:
 void SubMem(dbg_state* dbg)
 {
 	int base_ptr = *(int*)&dbg->mem_buffer[STACK_PTR_REG * 8];
@@ -912,7 +851,8 @@ void Stub()
 
 }
 
-std::string GetFolderName(std::string path)
+*/
+own_std::string GetFolderName(own_std::string path)
 {
 	int last_bar = path.find_last_of('/');
 
@@ -928,19 +868,113 @@ std::string GetFolderName(std::string path)
 
 	return path.substr(last_bar + 1);
 }
+void MaybeAddBarToEndOfStr(own_std::string* str)
+{
+	if (str->size() != 0 && (*str)[str->size() - 1] != '/' && (*str)[str->size() - 1] != '\\')
+		(*str) += '/';
+
+}
+void ImageFolderToFile(own_std::string folder)
+{
+	struct file_header
+	{
+		unsigned int total_imgs;
+		unsigned int data_sect_offset;
+		unsigned int str_tbl_offset;
+	};
+	struct file_png
+	{
+		unsigned int name;
+		unsigned int width;
+		unsigned int height;
+		unsigned char channels;
+		unsigned int data;
+	};
+	own_std::vector<char*> file_names;
+	own_std::vector<unsigned char> file_data;
+	own_std::vector<unsigned char> data_sect;
+	own_std::vector<unsigned char> str_table;
+	GetFilesInDirectory((char *)folder.c_str(), nullptr, &file_names);
+
+
+	int total_imgs = 0;
+	FOR_VEC(ptr, file_names)
+	{
+		own_std::string str = *ptr;
+		int p_idx = str.find_last_of('.');
+		own_std::string ext = str.substr(p_idx + 1);
+		if (ext == "png")
+		{
+			int cur_str_table_offset = str_table.size();
+			auto c_str = (unsigned char*)str.c_str();
+			str_table.insert(str_table.end(), c_str, c_str + str.size() + 1);
+
+			int cur_offset = file_data.size();
+			file_data.make_count(file_data.size() + sizeof(file_png));
+			auto cur_file = (file_png*)(file_data.begin() + cur_offset);
+
+			int width, height, nrChannels;
+			unsigned char* src = nullptr;
+			stbi_set_flip_vertically_on_load(true);
+
+			src = stbi_load((char*)(folder + str).c_str(), &width, &height, &nrChannels, 0);
+			ASSERT(src);
+
+
+			cur_file->name = cur_str_table_offset;
+			cur_file->width = width;
+			cur_file->height = height;
+			cur_file->channels = nrChannels;
+			cur_file->data = data_sect.size();
+
+			data_sect.insert(data_sect.end(), src, src + (width * height * nrChannels));
+			stbi_image_free(src);
+			total_imgs++;
+
+		}
+	}
+	own_std::vector<unsigned char> final_buffer;
+
+	INSERT_VEC(final_buffer, file_data);
+	int data_sect_offset = final_buffer.size();
+	INSERT_VEC(final_buffer, data_sect);
+	int str_tbl_offset = final_buffer.size();
+	INSERT_VEC(final_buffer, str_table);
+
+	file_header hdr;
+	hdr.total_imgs = total_imgs;
+	hdr.str_tbl_offset = str_tbl_offset;
+	hdr.data_sect_offset = data_sect_offset;
+
+	final_buffer.insert(final_buffer.begin(), (unsigned char*)&hdr, (unsigned char*)(&hdr + 1));
+
+	int size = final_buffer.size();
+	if ((size % 4) != 0)
+		size += 4 - (size % 4);
+	final_buffer.make_count(size);
+
+	own_std::string imgs_str((char*)final_buffer.data(), final_buffer.size());
+	own_std::string images_encoded_str = base64_encode(imgs_str);
+
+	WriteFileLang("../web/images.data", (void *)images_encoded_str.data(), images_encoded_str.size());
+}
 int main(int argc, char* argv[])
 {
-	TCHAR buffer[MAX_PATH] = { 0 };
-	GetModuleFileName(NULL, buffer, MAX_PATH);
-	std::string exe_full = buffer;
-	int last_bar = exe_full.find_last_of("\\/");
-	std::string exe_dir = exe_full.substr(0, last_bar + 1);
-	SetCurrentDirectory(exe_dir.c_str());
-
 	lang_state lang_stat;
 	mem_alloc alloc;
 	InitMemAlloc(&alloc);
+	open_gl_state gl_state = {};
+	gl_state.lang_stat = &lang_stat;
+	InitLang(&lang_stat, (AllocTypeFunc)heap_alloc, (FreeTypeFunc)heap_free, &alloc);
+	//SetCurrentDirectory(exe_dir.c_str());
 
+
+	own_std::string test = "hello";
+
+	ASSERT(test == "hello");
+
+	test = test + "jij";
+	ASSERT(test == "hellojij");
 	/*
 	auto addr = heap_alloc(&alloc, 12);
 	auto addr2 = heap_alloc(&alloc, 12);
@@ -949,9 +983,6 @@ int main(int argc, char* argv[])
 	*/
 
 
-	open_gl_state gl_state = {};
-	gl_state.lang_stat = &lang_stat;
-	InitLang(&lang_stat, (AllocTypeFunc)heap_alloc, (FreeTypeFunc)heap_free, &alloc);
 
 
 	compile_options opts = {};
@@ -959,7 +990,8 @@ int main(int argc, char* argv[])
 	//opts.wasm_dir = "../lang2/web/";
 	if (argc > 1)
 	{
-		std::string arg1 = argv[1];
+		own_std::string arg1 = argv[1];
+		//printf("arg is %s, str is %s\n", argv[1], arg1.c_str());
 		if (arg1 == "run")
 		{
 			if (argc <= 2)
@@ -1011,6 +1043,7 @@ int main(int argc, char* argv[])
 
 	MaybeAddBarToEndOfStr(&opts.wasm_dir);
 
+	/*
 	AssignOutsiderFunc(&lang_stat, "GetMem", (OutsiderFuncType)GetMem);
 	AssignOutsiderFunc(&lang_stat, "SubMem", (OutsiderFuncType)SubMem);
 	AssignOutsiderFunc(&lang_stat, "Print", (OutsiderFuncType)Print);
@@ -1033,6 +1066,7 @@ int main(int argc, char* argv[])
 	AssignOutsiderFunc(&lang_stat, "AssignTexFolder", (OutsiderFuncType)AssignTexFolder);
 	//AssignOutsiderFunc(&lang_stat, "DebuggerCommand", (OutsiderFuncType)DebuggerCommand);
 	AssignOutsiderFunc(&lang_stat, "sin", (OutsiderFuncType)Sin);
+*/
 	Compile(&lang_stat, &opts);
 	if (!opts.release)
 	{

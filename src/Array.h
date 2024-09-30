@@ -1,14 +1,14 @@
 #pragma once
-#include <windows.h>
+//#include <windows.h>
 #include "serializable_pound_defines.h"
 #define FOR_ARRAY(index_name, ar_name, type_ar) for(int index_name = 0; index_name < (ar_name).count; index_name++){ type_ar *it = (ar_name)[index_name];
 #define FOR(ar_name) for(auto it = (ar_name)[0]; it < (ar_name).end; it++)
 #define FOR2(ar_name, idx_name) for(auto idx_name = (ar_name)[0]; idx_name < (ar_name).end; idx_name++)
 
 #ifdef IS_DLL
- #define FUNC_STRUCT_EXPORT  __declspec(dllimport) 
+ #define FUNC_STRUCT_EXPORT  
 #else
- #define FUNC_STRUCT_EXPORT  __declspec(dllexport) 
+ #define FUNC_STRUCT_EXPORT 
 #endif
 
 

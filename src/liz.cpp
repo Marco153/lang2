@@ -22,7 +22,7 @@ int main(int argc, char* argv[])
 	opts.wasm_dir = "../web/";
 	if (argc > 1)
 	{
-		std::string is_release = argv[1];
+		own_std::string is_release = argv[1];
 		if (is_release == "0")
 		{
 			opts.release = false;

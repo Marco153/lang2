@@ -366,7 +366,7 @@ ast_rep *AstFromNode(lang_state *lang_stat, node *n, scope *scp)
 	case node_type::N_STR_LIT:
 	{
 		ret->type = AST_STR_LIT;
-		ret->str = std::string(n->t->str);
+		ret->str = own_std::string(n->t->str);
 	}break;
 	case node_type::N_SCOPE:
     {

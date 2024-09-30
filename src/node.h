@@ -68,24 +68,24 @@ struct node_iter
 	}
 
 	void CheckTwoBinaryOparatorsTogether(node *);
-	bool node_iter::IsOpUnary(token2* tkn, node*);
-	void node_iter::SetNodeScopeIdx(lang_state* lang_stat, node** nd, unsigned char val, int, int);
+	bool IsOpUnary(token2* tkn, node*);
+	void SetNodeScopeIdx(lang_state* lang_stat, node** nd, unsigned char val, int, int);
 
-	void node_iter::ExpectTkn(tkn_type2);
-	node *node_iter::parse_func_like();
-	node *node_iter::parse_strct_like();
-	node *node_iter::parse_all();
-	node *node_iter::parse_stmnts();
-	node *node_iter::parse_sub_expr(int prec);
-	node *node_iter::parse_expr();
-	node *node_iter::parse_str(std::string &, int *);
-	node *node_iter::parse_(int prec,  parser_cond);
+	void ExpectTkn(tkn_type2);
+	node *parse_func_like();
+	node *parse_strct_like();
+	node *parse_all();
+	node *parse_stmnts();
+	node *parse_sub_expr(int prec);
+	node *parse_expr();
+	node *parse_str(own_std::string &, int *);
+	node *parse_(int prec,  parser_cond);
 	void CreateCondAndScope(node **n);
 
 	//Znode *parse_expression();
 	node* parse_expression(int);
 
-	node *node_iter::parse_sub_expression();
+	node *parse_sub_expression();
 	node *parse(tkn_type2 target);
 
 	token2 *peek_tkn();
@@ -208,7 +208,7 @@ struct node
 		struct
 		{
 			func_decl *fdecl;
-			std::string *str;
+			own_std::string *str;
 		};
 
 		type2 decl_type;
@@ -290,7 +290,7 @@ enum msg_type
 };
  struct variable
  {
-	std::string name;
+	own_std::string name;
 	type2 type;
  };
 
@@ -329,8 +329,8 @@ struct scope
 	type_struct2 *tstrct;
 	unit_file *file;
 
-	decl2 *FindVariable(std::string name);
-	std::string Print(int);
+	decl2 *FindVariable(own_std::string name);
+	own_std::string Print(int);
 };
 struct message
 {
@@ -343,9 +343,9 @@ struct message
 };
 struct unit_file
 {
-	std::string name;
-	std::string path;
-//	std::string contents;
+	own_std::string name;
+	own_std::string path;
+//	own_std::string contents;
 	char* contents;
 	unsigned long long contents_sz;
 	own_std::vector<token2> tkns;
@@ -361,7 +361,7 @@ struct unit_file
 	bool is_done;
 };
 
-bool decl2::AssignTemplate(lang_state *lang_stat, std::string tname, type2 *tp, comma_ret *given_arg)
+bool decl2::AssignTemplate(lang_state *lang_stat, own_std::string tname, type2 *tp, comma_ret *given_arg)
 {
 	switch(type.type)
 	{
@@ -415,9 +415,9 @@ enum import_type
 struct import_strct
 {
 	import_type type;
-	std::string alias;
+	own_std::string alias;
 	unit_file *fl;
-	decl2 *FindDecl(std::string name)
+	decl2 *FindDecl(own_std::string name)
 	{
 
 		ASSERT(fl->global);
