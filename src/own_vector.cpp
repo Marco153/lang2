@@ -136,6 +136,22 @@ namespace own_std
 			data_ = buffer;
 			len = other.len;
 		}
+		void operator =(string &src)
+		{
+			unsigned int l = src.len;
+			char* buffer = (char*)__lang_globals.alloc(__lang_globals.data, l);
+			memcpy(buffer, src.data_, l);
+			data_ = buffer;
+			len = l;
+		}
+		void operator =(const char* src)
+		{
+			unsigned int l = strlen(src);
+			char* buffer = (char*)__lang_globals.alloc(__lang_globals.data, l);
+			memcpy(buffer, src, strlen(src));
+			data_ = buffer;
+			len = l;
+		}
 		string(const char* src)
 		{
 			unsigned int l = strlen(src);
@@ -344,7 +360,7 @@ namespace own_std
 		string operator +(string other)
 		{
 			// use concat_in_place instead
-			ASSERT(0);
+			//ASSERT(0);
 			return concat(other);
 		}
 		char& operator [](int idx)
