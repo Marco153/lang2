@@ -2,11 +2,32 @@ namespace own_std
 {
 	struct string
 	{
+#define VALID_STR (unsigned int)('s' | ('t' << 8) | ('r' << 16))
+		
 		char *data_;
 		char **c_str_vec;
 		int c_str_vec_count;
 		int c_str_vec_len;
 		unsigned long long len;
+		int magic_number;
+
+		void init_str()
+		{
+			if(is_valid())
+				this->~string();
+			memset(this, 0, sizeof(*this));
+
+			new_c_str_vec(4);
+			validate();
+		}
+		bool is_valid()
+		{
+			return magic_number == VALID_STR;
+		}
+		void validate()
+		{
+			magic_number = VALID_STR;
+		}
 
 		bool contains_char_rev(char c, int * p)
 		{
@@ -75,6 +96,10 @@ namespace own_std
 			}
 			return -1;
 		}
+		void free_c_strs()
+		{
+			
+		}
 		void new_c_str_vec(int new_len)
 		{
 			auto prev = c_str_vec;
@@ -82,13 +107,15 @@ namespace own_std
 			memset(c_str_vec, 0, new_len * 8);
 			memcpy(c_str_vec, prev, c_str_vec_len * 8);
 			c_str_vec_len = new_len;
+			//if(prev)
+				//__lang_globals.free(__lang_globals.data, prev);
 		}
 		char *c_str()
 		{
 			char* buffer = (char *)__lang_globals.alloc(__lang_globals.data, len + 1);
 			memcpy(buffer, data_, len);
 
-			buffer[len + 1] = 0;
+			buffer[len] = 0;
 			if(c_str_vec_len <= 0 || c_str_vec_len >= 64)
 			{
 				new_c_str_vec(4);
@@ -97,6 +124,7 @@ namespace own_std
 				new_c_str_vec(c_str_vec_len * 2);
 			
 			c_str_vec[c_str_vec_count] = buffer;
+			c_str_vec_count++;
 
 			
 			return buffer;
@@ -129,6 +157,7 @@ namespace own_std
 		}
 		string(const string &other)
 		{
+			init_str();
 			char* buffer = (char *)__lang_globals.alloc(__lang_globals.data, other.len);
 			memcpy(buffer, other.data_, other.len);
 			data_ = buffer;
@@ -136,6 +165,7 @@ namespace own_std
 		}
 		string(const char * src)
 		{
+			init_str();
 			unsigned int l = strlen(src);
 			char* buffer = (char *)__lang_globals.alloc(__lang_globals.data, l);
 			memcpy(buffer, src, strlen(src));
@@ -144,6 +174,7 @@ namespace own_std
 		}
 		string(const char * src, int size)
 		{
+			init_str();
 			char* buffer = (char *)__lang_globals.alloc(__lang_globals.data, size);
 			string new_one;
 			memcpy(buffer, src, size);
@@ -153,6 +184,7 @@ namespace own_std
 		}
 		string(char * src, int size)
 		{
+			init_str();
 			char* buffer = (char *)__lang_globals.alloc(__lang_globals.data, size);
 			string new_one;
 			memcpy(buffer, src, size);
@@ -163,6 +195,18 @@ namespace own_std
 		{
 			if(data_)
 				__lang_globals.free(__lang_globals.data, data_);
+			if(is_valid())
+			{
+				for(int i = 0; i < c_str_vec_count;i++)
+				{
+					char *to_free = c_str_vec[i];
+					__lang_globals.free(__lang_globals.data, to_free);
+				}
+				magic_number = 0;
+				// this causes a leak, bur for some reason strings wont work if this address gets free
+				// i would to debug that later
+				//__lang_globals.free(__lang_globals.data, c_str_vec);
+			}
 		}
 		string()
 		{
@@ -200,7 +244,8 @@ namespace own_std
 			string new_one;
 			memcpy(buffer, data_, len);
 			memcpy(buffer + len, other.data_, other.len);
-			__lang_globals.free(__lang_globals.data, data_);
+			if(data_)
+				__lang_globals.free(__lang_globals.data, data_);
 			data_ = buffer;
 			len = total;
 
@@ -214,7 +259,8 @@ namespace own_std
 			memcpy(buffer, data_, len);
 			memcpy(buffer + len, other_buffer, other_len);
 
-			__lang_globals.free(__lang_globals.data, data_);
+			if(data_)
+				__lang_globals.free(__lang_globals.data, data_);
 			data_ = buffer;
 			len = total;
 
@@ -227,7 +273,8 @@ namespace own_std
 			memcpy(buffer, data_, len);
 			memcpy(buffer + len, other_buffer, other_len);
 
-			__lang_globals.free(__lang_globals.data, data_);
+			if(data_)
+				__lang_globals.free(__lang_globals.data, data_);
 			data_ = buffer;
 			len = total;
 
@@ -311,21 +358,29 @@ namespace own_std
 
 			return memcmp(data_, other.data_, len) == 0;
 		}
-		string operator +=(char other)
+		void operator +=(char other)
 		{
-			return concat(&other, 1);
+			if(!is_valid())
+				init_str();
+			concat_in_place(&other, 1);
 		}
-		string operator +=(const char *other)
+		void operator +=(const char *other)
 		{
-			return concat(other, strlen(other));
+			if(!is_valid())
+				init_str();
+			concat_in_place((char *)other, strlen(other));
 		}
-		string operator +=(char *other)
+		void operator +=(char *other)
 		{
-			return concat(other, strlen(other));
+			if(!is_valid())
+				init_str();
+			concat_in_place(other, strlen(other));
 		}
-		string operator +=(string other)
+		void operator +=(string other)
 		{
-			return concat(other);
+			if(!is_valid())
+				init_str();
+			concat_in_place(other.data_, other.len);
 		}
 		void push_back(char other)
 		{
@@ -341,6 +396,7 @@ namespace own_std
 		}
 		void operator =(const string &&other)
 		{
+			init_str();
 			char* buffer = (char *)__lang_globals.alloc(__lang_globals.data, other.len);
 			memcpy(buffer, other.data_, other.len);
 			data_ = buffer;
@@ -348,6 +404,7 @@ namespace own_std
 		}
 		void operator =(const string &other)
 		{
+			init_str();
 			char* buffer = (char *)__lang_globals.alloc(__lang_globals.data, other.len);
 			memcpy(buffer, other.data_, other.len);
 			data_ = buffer;
@@ -355,6 +412,7 @@ namespace own_std
 		}
 		void operator =(string &&other)
 		{
+			init_str();
 			char* buffer = (char *)__lang_globals.alloc(__lang_globals.data, other.len);
 			memcpy(buffer, other.data_, other.len);
 			data_ = buffer;
@@ -362,6 +420,7 @@ namespace own_std
 		}
 		void operator =(string &other)
 		{
+			init_str();
 			char* buffer = (char *)__lang_globals.alloc(__lang_globals.data, other.len);
 			memcpy(buffer, other.data_, other.len);
 			data_ = buffer;

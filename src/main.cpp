@@ -17,6 +17,7 @@ int max(int a, int b)
 }
 void ExitProcess(int val)
 {
+	*(int *)0=0;
 	_exit(val);
 	
 }
@@ -776,34 +777,6 @@ void OpenWindow(dbg_state* dbg)
 
 }
 :
-void SubMem(dbg_state* dbg)
-{
-	int base_ptr = *(int*)&dbg->mem_buffer[STACK_PTR_REG * 8];
-	int sz = *(int*)&dbg->mem_buffer[base_ptr + 8];
-	ASSERT(sz > 0)
-
-		int addr = *(int*)&dbg->mem_buffer[MEM_PTR_CUR_ADDR];
-	//int *max = (int*)&dbg->mem_buffer[MEM_PTR_MAX_ADDR];
-	*(int*)&dbg->mem_buffer[MEM_PTR_CUR_ADDR] -= sz;
-	ASSERT((addr - sz) >= 0);
-	//*(int*)&dbg->mem_buffer[RET_1_REG * 8] = addr;
-
-}
-void GetMem(dbg_state* dbg)
-{
-	int base_ptr = *(int*)&dbg->mem_buffer[STACK_PTR_REG * 8];
-	int sz = *(int*)&dbg->mem_buffer[base_ptr + 8];
-	ASSERT(sz > 0)
-
-		int addr = *(int*)&dbg->mem_buffer[MEM_PTR_CUR_ADDR];
-	//int *max = (int*)&dbg->mem_buffer[MEM_PTR_MAX_ADDR];
-	*(int*)&dbg->mem_buffer[MEM_PTR_CUR_ADDR] += sz;
-	ASSERT((addr + sz) < DATA_SECT_OFFSET);
-	//*max += sz;
-
-	*(int*)&dbg->mem_buffer[RET_1_REG * 8] = addr;
-
-}
 
 void GetTimeSinceStart(dbg_state* dbg)
 {
@@ -819,15 +792,6 @@ void Sqrt(dbg_state* dbg)
 	float val = *(float*)&dbg->mem_buffer[base_ptr + 8];
 
 	*(float*)&dbg->mem_buffer[RET_1_REG * 8] = sqrt(val);
-}
-void PrintStr(dbg_state* dbg)
-{
-	int base_ptr = *(int*)&dbg->mem_buffer[STACK_PTR_REG * 8];
-	int str_offset = *(int*)&dbg->mem_buffer[base_ptr + 8];
-	char* str = (char*)&dbg->mem_buffer[str_offset];
-	printf("%s", str);
-
-	//*(float*)&dbg->mem_buffer[RET_1_REG * 8] = sinf(val);
 }
 void PrintV3(dbg_state* dbg)
 {
@@ -856,17 +820,24 @@ own_std::string GetFolderName(own_std::string path)
 {
 	int last_bar = path.find_last_of('/');
 
+	bool last_was_bar = false;
 	if (last_bar == (path.size() - 1))
 	{
 		last_bar--;
 		while (path[last_bar] != '/' && path[last_bar] != '\\' && last_bar > 0)
 			last_bar--;
 		//last_bar = path.fi(path.data(), 0, last_bar - 1);
+		last_was_bar = true;
 	}
 	if (last_bar == -1)
 		last_bar = 0;
+	own_std::string ret = path.substr(last_bar + 1);
 
-	return path.substr(last_bar + 1);
+	if(last_was_bar)
+		ret.pop_back();
+
+
+	return ret;
 }
 void MaybeAddBarToEndOfStr(own_std::string* str)
 {
@@ -958,6 +929,43 @@ void ImageFolderToFile(own_std::string folder)
 
 	WriteFileLang("../web/images.data", (void *)images_encoded_str.data(), images_encoded_str.size());
 }
+void SubMem(dbg_state* dbg)
+{
+	int base_ptr = *(int*)&dbg->mem_buffer[STACK_PTR_REG * 8];
+	int sz = *(int*)&dbg->mem_buffer[base_ptr + 8];
+	ASSERT(sz > 0)
+
+		int addr = *(int*)&dbg->mem_buffer[MEM_PTR_CUR_ADDR];
+	//int *max = (int*)&dbg->mem_buffer[MEM_PTR_MAX_ADDR];
+	*(int*)&dbg->mem_buffer[MEM_PTR_CUR_ADDR] -= sz;
+	ASSERT((addr - sz) >= 0);
+	//*(int*)&dbg->mem_buffer[RET_1_REG * 8] = addr;
+
+}
+void GetMem(dbg_state* dbg)
+{
+	int base_ptr = *(int*)&dbg->mem_buffer[STACK_PTR_REG * 8];
+	int sz = *(int*)&dbg->mem_buffer[base_ptr + 8];
+	ASSERT(sz > 0)
+
+		int addr = *(int*)&dbg->mem_buffer[MEM_PTR_CUR_ADDR];
+	//int *max = (int*)&dbg->mem_buffer[MEM_PTR_MAX_ADDR];
+	*(int*)&dbg->mem_buffer[MEM_PTR_CUR_ADDR] += sz;
+	ASSERT((addr + sz) < DATA_SECT_OFFSET);
+	//*max += sz;
+
+	*(int*)&dbg->mem_buffer[RET_1_REG * 8] = addr;
+
+}
+void PrintStr(dbg_state* dbg)
+{
+	int base_ptr = *(int*)&dbg->mem_buffer[STACK_PTR_REG * 8];
+	int str_offset = *(int*)&dbg->mem_buffer[base_ptr + 8];
+	char* str = (char*)&dbg->mem_buffer[str_offset];
+	printf("%s", str);
+
+	//*(float*)&dbg->mem_buffer[RET_1_REG * 8] = sinf(val);
+}
 int main(int argc, char* argv[])
 {
 	lang_state lang_stat;
@@ -1043,9 +1051,11 @@ int main(int argc, char* argv[])
 
 	MaybeAddBarToEndOfStr(&opts.wasm_dir);
 
-	/*
 	AssignOutsiderFunc(&lang_stat, "GetMem", (OutsiderFuncType)GetMem);
 	AssignOutsiderFunc(&lang_stat, "SubMem", (OutsiderFuncType)SubMem);
+	AssignOutsiderFunc(&lang_stat, "PrintStr", (OutsiderFuncType)PrintStr);
+	/*
+	AssignOutsiderFunc(&lang_stat, "PrintV3", (OutsiderFuncType)PrintV3);
 	AssignOutsiderFunc(&lang_stat, "Print", (OutsiderFuncType)Print);
 	AssignOutsiderFunc(&lang_stat, "OpenWindow", (OutsiderFuncType)OpenWindow);
 	AssignOutsiderFunc(&lang_stat, "ShouldClose", (OutsiderFuncType)ShouldClose);
@@ -1061,8 +1071,6 @@ int main(int argc, char* argv[])
 	AssignOutsiderFunc(&lang_stat, "sqrt", (OutsiderFuncType)Sqrt);
 	AssignOutsiderFunc(&lang_stat, "AssignCtxAddr", (OutsiderFuncType)Stub);
 	AssignOutsiderFunc(&lang_stat, "WasmDbg", (OutsiderFuncType)Stub);
-	AssignOutsiderFunc(&lang_stat, "PrintV3", (OutsiderFuncType)PrintV3);
-	AssignOutsiderFunc(&lang_stat, "PrintStr", (OutsiderFuncType)PrintStr);
 	AssignOutsiderFunc(&lang_stat, "AssignTexFolder", (OutsiderFuncType)AssignTexFolder);
 	//AssignOutsiderFunc(&lang_stat, "DebuggerCommand", (OutsiderFuncType)DebuggerCommand);
 	AssignOutsiderFunc(&lang_stat, "sin", (OutsiderFuncType)Sin);
@@ -1074,7 +1082,7 @@ int main(int argc, char* argv[])
 
 		AssignDbgFile(&lang_stat, (opts.wasm_dir + opts.folder_name + ".dbg").c_str());
 		//AssignDbgFile(&lang_stat, opts);
-		RunDbgFunc(&lang_stat, "tests", args, 1);
+		//RunDbgFunc(&lang_stat, "tests", args, 1);
 		lang_stat.winterp->dbg->data = (void*)&gl_state;
 		RunDbgFunc(&lang_stat, "main", args, 1);
 

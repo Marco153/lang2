@@ -289,6 +289,8 @@ char* ReadEntireFileLang(char* name, unsigned int* read_out)
 	fh = open(name, O_RDONLY);
 	if (fh == -1) {
 		perror("open");
+		printf("file not found\"%s\"", name);
+		close(fh);
 		return nullptr;
 	}
 
@@ -300,6 +302,7 @@ char* ReadEntireFileLang(char* name, unsigned int* read_out)
 	int res=read(fh, string, v.st_size);
 	if (res == -1) {
 		perror("read");
+		close(fh);
 		return nullptr;
 	}
 	close(fh);
@@ -344,12 +347,17 @@ char* ReadEntireFileLang(char* name, unsigned int* read_out)
 void WriteFileLang(char* name, void* data, int size)
 {
 #ifdef LINUX
-	int fd = open(name, O_CREAT | O_WRONLY );
+	int fd = creat(name, 0644 );
+	//fd = open(name, O_CREAT | O_WRONLY );
 	if( fd == -1 ) {
 		printf( "Error opening file: errno: %d - %s\n", errno, strerror( errno ) );
+		printf("file \"%s\"", name);
+		close(fd);
+		ExitProcess(1);
 		return;
 	}
 	write(fd, data, size);
+	close(fd);
 #else
 	HANDLE file = CreateFile(name, GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
 
@@ -4213,6 +4221,7 @@ void WasmOnArgs(dbg_state* dbg)
 		int cursorPos = 0;
 		bool done = false;
 
+		/*
 		while (!done) {
 			ch = 'a';
 			//ch = _getch(); // Get a single character
@@ -4267,9 +4276,12 @@ void WasmOnArgs(dbg_state* dbg)
 			break;
 			}
 		}
+		*/
 
 
-		//std::cin >> input;
+		std::string input_std;
+		std::cin >> input_std;
+		input = input_std.c_str();
 		own_std::vector<own_std::string> args;
 		/*
 		if (dbg_state == DBG_STATE_ON_LANG)
@@ -6193,7 +6205,7 @@ void WasmInterpRun(wasm_interp* winterp, unsigned char* mem_buffer, unsigned int
 	dbg.wasm_state = winterp;
 
 	int first_start_offset = dbg.cur_func->wasm_stmnts[0].start;
-	//bcs[first_start_offset].one_time_dbg_brk = true;
+	bcs[first_start_offset].one_time_dbg_brk = true;
 	
 	// WASM BYTECODE
 
@@ -6221,7 +6233,9 @@ void WasmInterpRun(wasm_interp* winterp, unsigned char* mem_buffer, unsigned int
 				cur_st = &dbg.cur_func->wasm_stmnts[0];
 			dbg.cur_st = cur_st;
 			dbg.cur_ir = cur_ir;
+
 			WasmOnArgs(&dbg);
+
 			if (dbg.some_bc_modified)
 			{
 				dbg.some_bc_modified = false;
@@ -7967,6 +7981,8 @@ Your browser does not support the audio element.\
 	if(!wasm_state->lang_stat->release)
 		WasmSerialize(wasm_state, final_code_sect);
 
+	int a = 0;
+
 	//WasmInterp(final_code_sect, buffer, mem_size, "wasm_test_func_ptr", wasm_state, args, 3);
 
 	//WriteFileLang("../../wabt/test.html", (void*)page.data(), page.size());
@@ -8053,7 +8069,11 @@ void AddFolder(lang_state* lang_stat, own_std::string folder)
 
 	FOR_VEC(str, file_names)
 	{
-		AddNewFile(lang_stat, *str);
+		own_std::string s = *str;
+		int point = s.find_last_of('.');
+		own_std::string ext = s.substr(point + 1);
+		if(ext == "liz")
+			AddNewFile(lang_stat, *str);
 	}
 }
 int Compile(lang_state* lang_stat, compile_options *opts)
@@ -8359,6 +8379,8 @@ int Compile(lang_state* lang_stat, compile_options *opts)
 	}
 
     GenWasm(&wasm_state);
+    return;
+
 	/*
 	FOR_VEC(i1, lang_stat->files)
 	{

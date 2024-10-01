@@ -1,2 +1,6 @@
 PrintStr::fn outsider(str_lit);
 
+main::fn()
+{
+	PrintStr("Hello World");
+}
